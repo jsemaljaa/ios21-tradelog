@@ -1,0 +1,282 @@
+#!/usr/bin/bash
+
+export POSSIXLY_CORRECT=yes
+export LC_NUMERIC=en_US.UTF-8
+
+args=("$@") 
+args_count=${#args[@]}
+
+showHelp()
+{
+   echo "*******************************"
+   echo "VUT FIT 2021/2022 letní semestr"
+   echo "první projekt z předmětu IOS"
+   echo "Alina Vinogradova, xvinog00"
+   echo "*******************************"
+   echo "A script for analyzing the record of the system for trading on the stock exchange."
+   echo "Сan filter records and provide statistics according to user input."
+   echo
+   echo "Usage:     tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]"
+   echo
+   echo "           tradelog [-h|--help] print this message"
+   echo
+   echo "Allowed commands:"
+   echo "list-tick          Showing the list of stock symbols present, the tickers"
+   echo "profit             Showing statement of total profit on closed positions."
+   echo "pos                Showing a statement of the values of the positions"
+   echo "                   currently held in descending order of value."
+   echo "last-price         Listing the last known price for each ticker."
+   echo "hist-ord           Showing a histogram of the number of transactions according to ticker."
+   echo "graph-pos          Listing of the chart of the values of the held"
+   echo "                   positions according to the ticker."
+   echo
+   echo "Allowed filters:"
+   echo "-a DATETIME        Only records AFTER this date (without this date) are considered."
+   echo "-b DATETIME        Only records BEFORE this date (without this date) are considered."
+   echo "                   DATETIME is in the format YYYY-MM-DD HH:MM:SS"
+   echo "-t TICKER          Only entries corresponding to a given ticker are considered."
+   echo "                   For multiple instances of the switch, the set of all listed tickers is taken."
+   echo "-w WIDTH           Chart width adjustment. (WIDTH is a positive integer)."
+}
+
+# Checking arguments count
+if [ "$#" = 0 ]; then
+	showHelp
+   exit 1
+fi
+
+
+listTickFunc(){ #DONE
+   IFS=$'\n'
+   if [[ $file =~ (.*)?\.(log)?\.(gz) ]]; then
+      while IFS= read -r line
+		   do
+            echo $file
+			   zcat "$file" | cut -d';' -f 2
+		   done < "$file"
+   else 
+	   while IFS= read -r line 
+		   do
+			   echo "$line" | cut -d';' -f 2 
+		   done < "$file"
+   fi
+}
+
+profitFunc(){ #DONE
+   if [[ -n "$ticker" ]]; then
+      awk -F';' -v tick="$ticker" '
+      {if($3 == "buy" && $2 == tick) profit-=$4 * $6; else if($3 == "buy" && $2 == tick) profit+=$4 * $6} END {printf("%6.2f", profit)}
+      ' "$file"
+      echo
+   else
+      awk -F';' '
+      {if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%6.2f", profit)}
+      ' "$file"
+      echo
+   fi
+}
+
+posFunc(){
+   awk -F';' '{
+    {prices[$2]=$4};
+    ($3 == "buy")? count[$2]+=$6 : count[$2]-=$6;
+    } 
+    END {
+        {for (c in count){printf("%-9s : %11.2f\n", c, prices[c]*count[c])}}
+   }' "$file" | sort -t':' -k2nr
+}
+
+lastPriceFunc(){ #DONEEEEEEEEEEEE
+   awk -F';' '{a[$2]=$2";"$4} END{for(var in a){print a[var]}}' "$file" | awk -F';' '{printf "%-9s : %7.2f\n", $1, $2}' | sort -u -k 1
+}
+
+histOrdFunc(){ #DONE
+   cat "$file" | cut -d';' -f2| sort | uniq -c | cut -f1 | awk '{$1=sprintf("%-*s", $1, ""); gsub(" ", "#", $1); printf("%-10s: %s\n", $2, $1)}'
+}
+
+# graphPosFunc(){
+#    výpis grafu hodnot držených pozic dle tickeru.
+# }
+
+
+
+# tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]
+
+
+# TODO: if there's no .log file, then take an input from default stdin(?)
+
+for (( i=args_count; i>0; i-- )); do 
+   if [[ ${args[${i}]} =~ (.*)?\.(log) ]] || [[ ${args[${i}]} =~ (.*)?\.(log)?\.(gz) ]];
+   then
+      fileNames+=( "${args[${i}]}" )
+   fi 
+done
+
+if [[ ${#fileNames[*]} -eq 1 ]]; then
+   file=${fileNames[0]}
+   filesFlag=0
+elif [[ ${#fileNames[*]} -gt 1 ]]; then
+   filesFlag=1
+   filesCount=${#fileNames[*]}
+elif [[ ${#fileNames[*]} -eq 0 ]]; then
+   filesFlag=-1
+   file=$(cat)
+fi
+
+while true; # (( "$#" )); 
+   do
+      case $1 in
+
+      -h | --help) 
+         showHelp
+         shift
+         exit 0 
+      ;;
+
+      -t) #DONE
+         ticker="$2"
+         if [[ "$#" -eq 3 ]] || [[ "$3" = "-t" ]]; then
+               if [ "$filesFlag" == 0 ]; then
+                  grep -w "$ticker" "$file"
+               elif [ "$filesFlag" == 1 ]; then 
+                  for (( n=0; n<filesCount; n++)); do
+                     file=${fileNames[${n}]}
+                     grep -w "$ticker" "$file" 
+                  done
+               elif [ "$filesFlag" == -1 ]; then
+                     file=$(cat)
+               fi
+         fi
+		   shift 2
+      ;;
+
+      -a) #DONE
+         if [ -n "$2" ]; then
+            if [[ $3 =~ ^[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$ ]]; then
+               date_after="$2"
+               date_after+=" $3"
+               shift 2
+            else date_after="$2"
+            fi
+         awk -F';' -v dateA="$date_after" '{if($1 > dateA) print $0}' "$file"
+         else
+            echo "Chyba! tradelog -h nebo --help pro nápovědu"
+            exit 1
+         fi
+         shift
+      ;;
+
+      -b) #DONE
+         if [ -n "$2" ]; then
+            if [[ $3 =~ ^[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$ ]]; then
+               date_before="$2"
+               date_before+=" $3"
+               shift 2
+            else date_before="$2"
+            fi
+         awk -F';' -v dateB="$date_before" '{if($1 < dateB) print $0}' "$file"
+         else
+            echo "Chyba! tradelog -h nebo --help pro nápovědu"
+            exit 1
+         fi
+         shift
+      ;;
+
+      -w)
+         if [ -n "$2" ];
+         then
+            #TODO: check if WIDTH is integer (cele kladne cislo)
+            width="$3"
+            shift
+         else
+            echo "Chyba! tradelog -h nebo --help pro nápovědu"
+            exit 1
+         fi
+         shift
+      ;;
+
+      list-tick) 
+         if [ "$filesFlag" == 0 ]; then
+            listTickFunc "$file"
+         elif [ "$filesFlag" == 1 ]; then
+            for (( n=0; n<filesCount; n++)); do
+               file=${fileNames[${n}]}
+               listTickFunc "$file"
+            done
+         fi | sort -u
+         shift
+      ;;
+      
+      profit ) #DONE
+         if [ "$filesFlag" == 0 ]; then
+            profitFunc "$file" "$ticker"
+         elif [ "$filesFlag" == 1 ]; then
+            for (( n=0; n<filesCount; n++)); do
+               file=${fileNames[${n}]}
+               profitFunc "$file" "$ticker"
+            done
+         fi
+         shift
+      ;;
+
+      hist-ord ) #DONE
+         if [ "$filesFlag" == 0 ]; then
+            if [[ -n "$ticker" ]]; then
+               histOrdFunc "$file" | grep -w "$ticker"
+            else histOrdFunc "$file"
+            fi
+         elif [ "$filesFlag" == 1 ]; then
+            for (( n=0; n<filesCount; n++)); do
+               file=${fileNames[${n}]}
+               if [[ -n "$ticker" ]]; then
+                  histOrdFunc "$file" | grep -w "$ticker"
+               else histOrdFunc "$file"
+               fi
+            done
+         fi
+         
+         shift
+      ;;
+
+      pos )
+         if [ "$filesFlag" == 0 ]; then
+            if [[ -n "$ticker" ]]; then
+               posFunc "$file" | grep -w "$ticker"
+            else posFunc "$file"
+            fi
+         elif [ "$filesFlag" == 1 ]; then
+            for (( n=0; n<filesCount; n++)); do
+               file=${fileNames[${n}]}
+               if [[ -n "$ticker" ]]; then
+                  posFunc "$file" | grep -w "$ticker"
+               else posFunc "$file"
+               fi
+            done
+         fi
+         shift
+      ;;
+
+      last-price ) #DONE
+         if [ "$filesFlag" == 0 ]; then
+            if [[ -n "$ticker" ]]; then
+               lastPriceFunc "$file" | grep -w "$ticker"
+            else lastPriceFunc "$file"
+            fi
+         elif [ "$filesFlag" == 1 ]; then
+            for (( n=0; n<filesCount; n++)); do
+               file=${fileNames[${n}]}
+               if [[ -n "$ticker" ]]; then
+                  lastPriceFunc "$file" | grep -w "$ticker"
+               else lastPriceFunc "$file"
+               fi
+            done
+         fi
+         shift
+      ;;
+
+      * )
+         #echo "Unknown command line argument. Try ./tradelog [-h|--help] for help."
+         exit 1
+      ;;
+   esac
+done
