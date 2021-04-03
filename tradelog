@@ -119,17 +119,17 @@ getInput(){ # Funcion for getting files
 
    if [[ ${#fileNames[*]} -eq 1 ]]; then # A case for working with a single file
       if [[ ${fileNames[*]} =~ (.*)?\.(log)?\.(gz) ]]; then
-         input="zcat "${fileNames[*]}""
-         input=$(eval $input)
+         input="zcat ${fileNames[*]}"
+         input=$(eval "$input")
       else
-         input="cat "${fileNames[*]}"" # The variable input contains lines from the log
-         input=$(eval $input)
+         input="cat ${fileNames[*]}" # The variable input contains lines from the log
+         input=$(eval "$input")
       fi
    elif [[ ${#fileNames[*]} -gt 1 ]]; then # A case for working with multiple files
       filesCount=${#fileNames[*]}
       for (( n=0; n<filesCount; n++)); do
-         input="cat "${fileNames[${n}]}""
-         input+=$(eval $input)
+         input="cat ${fileNames[${n}]}"
+         input+=$(eval "$input")
       done
    elif [[ ${#fileNames[*]} -eq 0 ]] && [[ $helpFlag != 1 ]]; then # A case for working without a file and with standart input
       input=$(</dev/stdin)
@@ -138,11 +138,7 @@ getInput(){ # Funcion for getting files
 
 getFilteredInput(){
    if [[ -n "$ticker" ]]; then
-      if [[ ${#ticker[*]} -eq 1 ]]; then
-         input=$(cat <<< "$input" | grep -w "$ticker")
-      elif [[ ${#ticker[*]} -gt 1 ]]; then
-         input=$(cat <<< "$input" | grep -w ${ticker[@]/#/-e})
-      fi
+      input=$(cat <<< "$input" | grep -w "${ticker[@]/#/-e}")
    fi
 
    if [[ -n "$date_after" ]]; then
@@ -154,18 +150,22 @@ getFilteredInput(){
    fi
 }
 
+getInput "${args[@]}" "$args_count"
+getArgsFunc "$@"
+getFilteredInput "${ticker[@]}" "$date_after" "$date_before"
+
 listtickFunc(){
-   cat <<< $input | cut -d';' -f 2 | sort | uniq 
+   cat <<< "$input" | cut -d';' -f 2 | sort | uniq 
 }
 
 profitFunc(){
-   cat <<< $input | awk -F';' '
+   cat <<< "$input" | awk -F';' '
       {if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%6.2f\n", profit)}
       '
 }
 
 posFunc(){
-   cat <<< $input | awk -F';' '{
+   cat <<< "$input" | awk -F';' '{
     {prices[$2]=$4};
     ($3 == "buy")? count[$2]+=$6 : count[$2]-=$6;
     } 
@@ -175,16 +175,14 @@ posFunc(){
 }
 
 lastPriceFunc(){ #DONEEEEEEEEEEEE
-   cat <<< $input | awk -F';' '{a[$2]=$2";"$4} END{for(var in a){print a[var]}}' | awk -F';' '{printf "%-9s : %7.2f\n", $1, $2}' | sort -u -k 1
+   cat <<< "$input" | awk -F';' '{a[$2]=$2";"$4} END{for(var in a){print a[var]}}' | awk -F';' '{printf "%-9s : %7.2f\n", $1, $2}' | sort -u -k 1
 }
 
 histOrdFunc(){ #DONE
-   cat <<< $input | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk '{$1=sprintf("%-*s", $1, ""); gsub(" ", "#", $1); printf("%-10s: %s\n", $2, $1)}'
+   cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk '{$1=sprintf("%-*s", $1, ""); gsub(" ", "#", $1); printf("%-10s: %s\n", $2, $1)}'
 }
 
-getInput "$args" "$args_count"
-getArgsFunc "$@"
-getFilteredInput "$ticker" "$date_after" "$date_before"
+
 
 allFunc=( 'list-tick' 'profit' 'pos' 'last-price' 'hist-ord' 'graph-pos' )
 funcFlag=0
@@ -214,5 +212,5 @@ if [[ $funcFlag = 1 ]]; then
       fi
       # elif [[ "${i}" = "graph-pos" ]]; then
    done
-else cat <<< $input
+else cat <<< "$input"
 fi
