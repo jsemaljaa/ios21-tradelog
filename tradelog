@@ -1,5 +1,4 @@
 #! /bin/bash
-#! /bin/ksh
 export POSSIXLY_CORRECT=yes
 export LC_NUMERIC=en_US.UTF-8
 
@@ -160,7 +159,7 @@ listtickFunc(){
 
 profitFunc(){
    cat <<< "$input" | awk -F';' '
-      {if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%6.2f\n", profit)}
+      {if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%1.2f\n", profit)}
       '
 }
 
