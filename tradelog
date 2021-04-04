@@ -187,12 +187,12 @@ graphPosFunc(){
       {{if(num < abs($3)) num=abs($3)};
       }
       END {
-         {num=num/w};
+         {num=int(num/w)};
          {printf "%6.2f", num}
       }')
    # echo "$num"
    posFunc | awk -v w="$num" '{
-      {maxW=$3/w}; {if(maxW>0)
+      {maxW=int($3/w)}; {if(maxW>0)
                   {
                      maxW=sprintf("%-*s", maxW, ""); 
                      gsub(" ", "#", maxW);
@@ -204,10 +204,9 @@ graphPosFunc(){
                      gsub(" ", "!", maxW);
                      printf("%-10s: %s\n", $1, maxW);
                   }
-                  else if(int(maxW)==0)
+                  else if(maxW==0)
                   {
-                     maxW="\n";
-                     printf("%-10s:%s\n", $1, maxW);
+                     printf("%-10s:\n", $1);
                   }}
             }' | sort
 }
