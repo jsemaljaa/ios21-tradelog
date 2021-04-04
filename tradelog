@@ -2,17 +2,19 @@
 export POSSIXLY_CORRECT=yes
 export LC_NUMERIC=en_US.UTF-8
 
+                                                                                    #   -------------------------------
+                                                                                    #   VUT FIT 2021/2022 letní semestr
+                                                                                    #    první projekt z předmětu IOS
+                                                                                    #    Alina Vinogradova, xvinog00
+                                                                                    #   -------------------------------
+
+
 args=("$@")
 args_count=${#args[@]}
 
 
 showHelp() # Funkce pro výstup popisu práce skriptu
 {
-   echo "*******************************"
-   echo "VUT FIT 2021/2022 letní semestr"
-   echo "první projekt z předmětu IOS"
-   echo "Alina Vinogradova, xvinog00"
-   echo "*******************************"
    echo "Skript pro analýzu záznamu systému pro obchodování na burze cenných papírů."
    echo "Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele."
    echo
@@ -36,7 +38,11 @@ showHelp() # Funkce pro výstup popisu práce skriptu
    echo "                   Při více výskytech přepínače se bere množina všech uvedených tickerů."
    echo "-w WIDTH           U výpisu grafů nastavuje jejich šířku, tedy délku nejdelšího řádku na WIDTH."
    echo "                   WIDTH je celé kladné číslo."
+   exit 0
 }
+
+# Kontrola volání help
+# Případ se používá k tomu, aby nedošlo k přerušení případů volání ./tradelog pro vstup ze stdin
 
 if [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
    helpFlag=1
@@ -151,13 +157,17 @@ getFilteredInput(){
 }
 
 listtickFunc(){
-   cat <<< "$input" | cut -d';' -f 2 | sort | uniq 
+   cat <<< "$input" | cut -d';' -f 2 | sort | uniq
+
+   # Pomocí cut říkáme programu, že chceme brát v úvahu pouze 2 buňku každého řádku (oddělovač ;),
+   # Protože tam jsou tickery, při výstupu řadíme v abecedním pořadí a nastavíme parametr pro výstup pouze unikátních případů
 }
 
 profitFunc(){
-   cat <<< "$input" | awk -F';' '
-      {if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%1.2f\n", profit)}
-      '
+   cat <<< "$input" | awk -F';' '{if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%1.2f\n", profit)}'
+
+   # S awk procházíme po každém vstupním řádku a počítáme částku operace (cena vynásobená počtem)
+   # Zapisujeme to do proměnné profit v závislosti na povaze tranzitu (nákup - nebo prodej +) 
 }
 
 posFunc(){
@@ -168,23 +178,31 @@ posFunc(){
     END {
         {for (c in count){printf("%-9s : %11.2f\n", c, prices[c]*count[c])}}
    }' | sort -t':' -k2nr
+
+   # V poli prices budou zaznamenány hodnoty nejnovějších cen všech tickerů
+   # Dále počítáme počet všech tickerů, které má uživatel k dispozici (prodej -, nákup +)
+   # Při výstupů funkce vynásobíme počet tickerů poslední známou cenou
 }
 
 lastPriceFunc(){
-   cat <<< "$input" | awk -F';' '{a[$2]=$2";"$4} END{for(var in a){print a[var]}}' | awk -F';' '{printf "%-9s : %7.2f\n", $1, $2}' | sort -u -k 1
+   cat <<< "$input" | awk -F';' '{prices[$2]=$2";"$4} END{for(ticker in prices){print prices[ticker]}}' | awk -F';' '{printf "%-9s : %7.2f\n", $1, $2}' | sort -u -k 1
+
+   # Pole prices s indexy rovnajícími se hodnotám dostupných tickerů bude zaznamenávat aktuální ceny každého tickeru za předpokladu,
+   # že při každém novém nalezení tickeru bude jeho cena aktualizována
 }
 
 histOrdFunc(){
    if [ -z "$width" ]; then
       width=1
    fi
-   num=$(cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk -v w="$width" '{if(num<$1) num=$1} END{{num=num/w};{print num}}')
-   #echo "$num"
+
    cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk -v w="$width" '{
                                                    {maxW=int($1/w)};
                                                    maxW=sprintf("%-*s", maxW, ""); 
                                                    gsub(" ", "#", maxW); 
                                                    printf("%-10s: %s\n", $2, maxW)}'
+
+   # Postupně procházíme souborem, získáváme počet výskytů v souboru pro každý jednotlivý ticker
 }
 
 graphPosFunc(){
@@ -200,7 +218,9 @@ graphPosFunc(){
          {num=int(num/w)};
          {printf "%6.2f", num}
       }')
-   # echo "$num"
+
+   # Proměnná num v sobě uchovává největší možnou hodnotu, která bude vyjádřena histogramem
+
    posFunc | awk -v w="$num" '{
       {maxW=int($3/w)}; {if(maxW>0)
                   {
@@ -219,11 +239,20 @@ graphPosFunc(){
                      printf("%-10s:\n", $1);
                   }}
             }' | sort
+   
+   # Získáváme hodnoty z funkce pos, 
+   # překládáme je do požadovaných značek v závislosti na + a -
+
 }
 
+# Funkce getInput dostane na vstup všechny argumenty a jejich počet, najít a určit název souboru nebo typ vstupu
 getInput "${args[@]}" "$args_count"
+# Funkce getArgsFunc dostane na vstup všechny argumenty s cílem najít a zapsat dostupné filtry
 getArgsFunc "$@"
+# Funkce getFilteredInput dostane na vstup proměnné s filtry, aby správně naformátovat vstupní soubor podle filtrů uživatelem definované
 getFilteredInput "${ticker[@]}" "$date_after" "$date_before"
+
+# Kontrolujeme, zda mezi argumenty existuje alespoň jedna známá operace
 
 allFunc=( 'list-tick' 'profit' 'pos' 'last-price' 'hist-ord' 'graph-pos' )
 funcFlag=0
@@ -235,21 +264,30 @@ for i in "${allFunc[@]}"; do
    done
 done
 
+# Pokud existuje, určíme, která a zavoláme ji
+
 if [[ $funcFlag = 1 ]]; then
    for i in "$@"; do
       if [[ "${i}" = "list-tick" ]]; then
          listtickFunc
+         exit 0
       elif [[ "${i}" = "profit" ]]; then
          profitFunc
+         exit 0
       elif [[ "${i}" = "pos" ]]; then
          posFunc
+         exit 0
       elif [[ "${i}" = "last-price" ]]; then
          lastPriceFunc
+         exit 0
       elif [[ "${i}" = "hist-ord" ]]; then
          histOrdFunc
+         exit 0
       elif [[ "${i}" = "graph-pos" ]]; then
          graphPosFunc
+         exit 0
       fi
    done
+# Pokud není, výstup == filtrovaný vstup
 else cat <<< "$input"
 fi
