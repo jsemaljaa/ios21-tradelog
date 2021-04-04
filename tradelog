@@ -98,7 +98,7 @@ getArgsFunc(){ # Funkce pro získání argumentů-filtrů
       ;;
 
       -w )
-         if [ -n "$2" ] && [ "$2" > 0 ]; # Kontrola, zda width je celé kladné číslo
+         if [ -n "$2" ] && [ "$2" -gt 0 ]; # Kontrola, zda width je celé kladné číslo
          then
             width="$2"
             shift
