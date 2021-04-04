@@ -5,49 +5,50 @@ export LC_NUMERIC=en_US.UTF-8
 args=("$@")
 args_count=${#args[@]}
 
-if [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
-   helpFlag=1
-fi
 
-showHelp()
+showHelp() # Funkce pro výstup popisu práce skriptu
 {
    echo "*******************************"
    echo "VUT FIT 2021/2022 letní semestr"
    echo "první projekt z předmětu IOS"
    echo "Alina Vinogradova, xvinog00"
    echo "*******************************"
-   echo "A script for analyzing the record of the system for trading on the stock exchange."
-   echo "Сan filter records and provide statistics according to user input."
+   echo "Skript pro analýzu záznamu systému pro obchodování na burze cenných papírů."
+   echo "Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele."
    echo
    echo "Usage:     tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]"
    echo
-   echo "           tradelog [-h|--help] print this message"
+   echo "           tradelog [-h|--help] vytiskne tuto zprávu"
    echo
    echo "Allowed commands:"
-   echo "list-tick          Showing the list of stock symbols present, the tickers"
-   echo "profit             Showing statement of total profit on closed positions."
-   echo "pos                Showing a statement of the values of the positions"
-   echo "                   currently held in descending order of value."
-   echo "last-price         Listing the last known price for each ticker."
-   echo "hist-ord           Showing a histogram of the number of transactions according to ticker."
-   echo "graph-pos          Listing of the chart of the values of the held"
-   echo "                   positions according to the ticker."
+   echo "list-tick          Výpis seznamu vyskytujících se burzovních symbolů, tzv. 'tickerů.'"
+   echo "profit             Výpis celkového zisku z uzavřených pozic."
+   echo "pos                Výpis hodnot aktuálně držených pozic seřazených sestupně dle hodnoty."
+   echo "last-price         výpis poslední známé ceny pro každý ticker."
+   echo "hist-ord           Výpis histogramu počtu transakcí dle tickeru."
+   echo "graph-pos          Výpis grafu hodnot držených pozic dle tickeru."
    echo
    echo "Allowed filters:"
-   echo "-a DATETIME        Only records AFTER this date (without this date) are considered."
-   echo "-b DATETIME        Only records BEFORE this date (without this date) are considered."
-   echo "                   DATETIME is in the format YYYY-MM-DD HH:MM:SS"
-   echo "-t TICKER          Only entries corresponding to a given ticker are considered."
-   echo "                   For multiple instances of the switch, the set of all listed tickers is taken."
-   echo "-w WIDTH           Chart width adjustment. (WIDTH is a positive integer)."
+   echo "-a DATETIME        Jsou uvažovány pouze záznamy PO tomto datu (bez tohoto data)."
+   echo "-b DATETIME        Jsou uvažovány pouze záznamy PŘED tímto datem (bez tohoto data)."
+   echo "                   DATETIME je formátu YYYY-MM-DD HH:MM:SS"
+   echo "-t TICKER          Jsou uvažovány pouze záznamy odpovídající danému tickeru."
+   echo "                   Při více výskytech přepínače se bere množina všech uvedených tickerů."
+   echo "-w WIDTH           U výpisu grafů nastavuje jejich šířku, tedy délku nejdelšího řádku na WIDTH."
+   echo "                   WIDTH je celé kladné číslo."
 }
 
-getArgsFunc(){
+if [[ "$1" = "-h" ]] || [[ "$1" = "--help" ]]; then
+   helpFlag=1
+   showHelp
+fi
+
+getArgsFunc(){ # Funkce pro získání argumentů-filtrů
    while true; do
       case $1 in
-      -t ) # DONE
-         if [[ -n "$2" ]] && [[ $2 =~ ^[A-Z]*$ ]]; then # Checking if there's ticker after -t
-            ticker+=( "$2" )
+      -t )
+         if [[ -n "$2" ]] && [[ $2 =~ ^[A-Z]*$ ]]; then # Kontrola, zda je ticker after -t
+            ticker+=( "$2" ) # Všechny tickery budou uloženy v poli
             shift
          else 
             echo "Error! Try ./tradelog [-h | --help] for help"
@@ -56,9 +57,9 @@ getArgsFunc(){
          shift
       ;;
 
-      -a ) # DONE
+      -a )
          if [ -n "$2" ]; then
-            if [[ $3 =~ ^[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$ ]]; then
+            if [[ $3 =~ ^[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$ ]]; then # Kontrola formy přenosu argumentu DATETIME (buď to -a "DATETIME" nebo -a DATETIME )
                date_after="$2"
                date_after+=" $3"
                shift 2
@@ -73,7 +74,7 @@ getArgsFunc(){
          shift
       ;;
 
-      -b ) #DONE
+      -b )
          if [ -n "$2" ]; then
             if [[ $3 =~ ^[0-2][0-9]:[0-6][0-9]:[0-6][0-9]$ ]]; then
                date_before="$2"
@@ -91,7 +92,7 @@ getArgsFunc(){
       ;;
 
       -w )
-         if [ -n "$2" ];
+         if [ -n "$2" ] && [ "$2" > 0 ]; # Kontrola, zda width je celé kladné číslo
          then
             width="$2"
             shift
@@ -110,41 +111,41 @@ getArgsFunc(){
 }
 
 getInput(){ # Funcion for getting files
-   for (( i=0; i<args_count; i++ )); do # With knowing that the file names are very last arguments
-      if [[ ${args[${i}]} =~ (.*)?\.(log) ]] || [[ ${args[${i}]} =~ (.*)?\.(log)?\.(gz) ]]; then
-         fileNames+=( "${args[${i}]}" )
+   for (( i=0; i<args_count; i++ )); do # Procházíme všemi argumenty
+      if [[ ${args[${i}]} =~ (.*)?\.(log) ]] || [[ ${args[${i}]} =~ (.*)?\.(log)?\.(gz) ]]; then # a kontrolujeme, které z nich jsou názvy souborů
+         fileNames+=( "${args[${i}]}" ) # Názvy souborů jsou uloženy v poli
       fi
    done
 
-   if [[ ${#fileNames[*]} -eq 1 ]]; then # A case for working with a single file
-      if [[ ${fileNames[*]} =~ (.*)?\.(log)?\.(gz) ]]; then
-         input="zcat ${fileNames[*]}"
-         input=$(eval "$input")
+   if [[ ${#fileNames[*]} -eq 1 ]]; then # Případ pro práci s jedním souborem
+      if [[ ${fileNames[*]} =~ (.*)?\.(log)?\.(gz) ]]; then # Kontrolujeme, zda pracujeme s archivem .gz
+         input="zcat ${fileNames[*]}" 
+         input=$(eval "$input") # Obsah souborů .gz bude uložen v proměnné input
       else
-         input="cat ${fileNames[*]}" # The variable input contains lines from the log
-         input=$(eval "$input")
+         input="cat ${fileNames[*]}"
+         input=$(eval "$input") # Obsah souborů .log bude uložen v proměnné input
       fi
-   elif [[ ${#fileNames[*]} -gt 1 ]]; then # A case for working with multiple files
+   elif [[ ${#fileNames[*]} -gt 1 ]]; then # Případ pro práci s více soubory
       filesCount=${#fileNames[*]}
       for (( n=0; n<filesCount; n++)); do
          input="cat ${fileNames[${n}]}"
-         input+=$(eval "$input")
+         input+=$(eval "$input") # Obsah více souborů bude postupně uložen do proměnné input
       done
-   elif [[ ${#fileNames[*]} -eq 0 ]] && [[ $helpFlag != 1 ]]; then # A case for working without a file and with standart input
-      input=$(</dev/stdin)
+   elif [[ ${#fileNames[*]} -eq 0 ]] && [[ $helpFlag != 1 ]]; then # Případ pro práci bez souboru a se standartním vstupem
+      input=$(</dev/stdin) # Proměnná input čeká na vstup ze stdin
    fi
 }
 
 getFilteredInput(){
-   if [[ -n "$ticker" ]]; then
+   if [[ -n "$ticker" ]]; then # Pokud je zadán ticker/tickery, bude obsah souboru přepsán na řádky obsahující ticker
       input=$(cat <<< "$input" | grep -w "${ticker[@]/#/-e}")
    fi
 
-   if [[ -n "$date_after" ]]; then
+   if [[ -n "$date_after" ]]; then 
       input=$(cat <<< "$input" | awk -F';' -v dateA="$date_after" '{if($1 > dateA) print $0}')
    fi
 
-   if [[ -n "$date_before" ]]; then
+   if [[ -n "$date_before" ]]; then # Pokud je zadán -b datetime, bude obsah souboru přepsán na řádky před tímto datem
       input=$(cat <<< "$input" | awk -F';' -v dateB="$date_before" '{if($1 < dateB) print $0}')
    fi
 }
@@ -169,12 +170,21 @@ posFunc(){
    }' | sort -t':' -k2nr
 }
 
-lastPriceFunc(){ #DONEEEEEEEEEEEE
+lastPriceFunc(){
    cat <<< "$input" | awk -F';' '{a[$2]=$2";"$4} END{for(var in a){print a[var]}}' | awk -F';' '{printf "%-9s : %7.2f\n", $1, $2}' | sort -u -k 1
 }
 
-histOrdFunc(){ #DONE
-   cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk '{$1=sprintf("%-*s", $1, ""); gsub(" ", "#", $1); printf("%-10s: %s\n", $2, $1)}'
+histOrdFunc(){
+   if [ -z "$width" ]; then
+      width=1
+   fi
+   num=$(cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk -v w="$width" '{if(num<$1) num=$1} END{{num=num/w};{print num}}')
+   #echo "$num"
+   cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk -v w="$width" '{
+                                                   {maxW=int($1/w)};
+                                                   maxW=sprintf("%-*s", maxW, ""); 
+                                                   gsub(" ", "#", maxW); 
+                                                   printf("%-10s: %s\n", $2, maxW)}'
 }
 
 graphPosFunc(){
@@ -227,10 +237,7 @@ done
 
 if [[ $funcFlag = 1 ]]; then
    for i in "$@"; do
-      # echo ${i}
-      if [[ "${i}" = "-h" ]] || [[ "${i}" = "--help" ]]; then
-         showHelp
-      elif [[ "${i}" = "list-tick" ]]; then
+      if [[ "${i}" = "list-tick" ]]; then
          listtickFunc
       elif [[ "${i}" = "profit" ]]; then
          profitFunc
