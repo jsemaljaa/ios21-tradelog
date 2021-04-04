@@ -149,10 +149,6 @@ getFilteredInput(){
    fi
 }
 
-getInput "${args[@]}" "$args_count"
-getArgsFunc "$@"
-getFilteredInput "${ticker[@]}" "$date_after" "$date_before"
-
 listtickFunc(){
    cat <<< "$input" | cut -d';' -f 2 | sort | uniq 
 }
@@ -181,7 +177,44 @@ histOrdFunc(){ #DONE
    cat <<< "$input" | cut -d';' -f2 | sort | uniq -c | cut -f1 | awk '{$1=sprintf("%-*s", $1, ""); gsub(" ", "#", $1); printf("%-10s: %s\n", $2, $1)}'
 }
 
+graphPosFunc(){
+   if [ -z "$width" ]; then
+      width=1000
+   fi
 
+   num=$(posFunc | awk -v w="$width" '
+      function abs(v) {return v < 0 ? -v : v}
+      {{if(num < abs($3)) num=abs($3)};
+      }
+      END {
+         {num=num/w};
+         {printf "%6.2f", num}
+      }')
+   # echo "$num"
+   posFunc | awk -v w="$num" '{
+      {maxW=$3/w}; {if(maxW>0)
+                  {
+                     maxW=sprintf("%-*s", maxW, ""); 
+                     gsub(" ", "#", maxW);
+                     printf("%-10s: %s\n", $1, maxW);
+                  }
+                  else if(maxW<0)
+                  {
+                     maxW=sprintf("%-*s", maxW, ""); 
+                     gsub(" ", "!", maxW);
+                     printf("%-10s: %s\n", $1, maxW);
+                  }
+                  else if(int(maxW)==0)
+                  {
+                     maxW="\n";
+                     printf("%-10s:%s\n", $1, maxW);
+                  }}
+            }' | sort
+}
+
+getInput "${args[@]}" "$args_count"
+getArgsFunc "$@"
+getFilteredInput "${ticker[@]}" "$date_after" "$date_before"
 
 allFunc=( 'list-tick' 'profit' 'pos' 'last-price' 'hist-ord' 'graph-pos' )
 funcFlag=0
@@ -208,8 +241,9 @@ if [[ $funcFlag = 1 ]]; then
          lastPriceFunc
       elif [[ "${i}" = "hist-ord" ]]; then
          histOrdFunc
+      elif [[ "${i}" = "graph-pos" ]]; then
+         graphPosFunc
       fi
-      # elif [[ "${i}" = "graph-pos" ]]; then
    done
 else cat <<< "$input"
 fi
