@@ -3,7 +3,7 @@ export POSSIXLY_CORRECT=yes
 export LC_NUMERIC=en_US.UTF-8
 
                                                                                     #   -------------------------------
-                                                                                    #   VUT FIT 2021/2022 letní semestr
+                                                                                    #   VUT FIT 2020/2021 letní semestr
                                                                                     #    první projekt z předmětu IOS
                                                                                     #    Alina Vinogradova, xvinog00
                                                                                     #   -------------------------------
@@ -164,7 +164,7 @@ listtickFunc(){
 }
 
 profitFunc(){
-   cat <<< "$input" | awk -F';' '{if($3 == "buy") profit-=$4 * $6; else profit+=$4 * $6} END {printf("%1.2f\n", profit)}'
+   cat <<< "$input" | awk -F';' '{($3 == "buy")? profit-=$4 * $6 : profit+=$4 * $6} END {printf("%1.2f\n", profit)}'
 
    # S awk procházíme po každém vstupním řádku a počítáme částku operace (cena vynásobená počtem)
    # Zapisujeme to do proměnné profit v závislosti na povaze tranzitu (nákup - nebo prodej +) 
@@ -173,8 +173,7 @@ profitFunc(){
 posFunc(){
    cat <<< "$input" | awk -F';' '{
     {prices[$2]=$4};
-    ($3 == "buy")? count[$2]+=$6 : count[$2]-=$6;
-    } 
+    ($3 == "buy")? count[$2]+=$6 : count[$2]-=$6;} 
     END {
         {for (c in count){printf("%-9s : %11.2f\n", c, prices[c]*count[c])}}
    }' | sort -t':' -k2nr
@@ -210,10 +209,9 @@ graphPosFunc(){
       width=1000
    fi
 
-   num=$(posFunc | awk -v w="$width" '
+   w=$(posFunc | awk -v w="$width" '
       function abs(v) {return v < 0 ? -v : v}
-      {{if(num < abs($3)) num=abs($3)};
-      }
+      {{if(num < abs($3)) num=abs($3)};}
       END {
          {num=int(num/w)};
          {printf "%6.2f", num}
@@ -221,7 +219,7 @@ graphPosFunc(){
 
    # Proměnná num v sobě uchovává největší možnou hodnotu, která bude vyjádřena histogramem
 
-   posFunc | awk -v w="$num" '{
+   posFunc | awk -v w="$w" '{
       {maxW=int($3/w)}; {if(maxW>0)
                   {
                      maxW=sprintf("%-*s", maxW, ""); 
