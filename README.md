@@ -7,7 +7,7 @@
 # CZ
 Skript pro analýzu záznamu systému pro obchodování na burze cenných papírů.
 Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele.
-## Použití:     tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]"
+## Použití:     tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]
 
 Povolené příkazy:
 ```
@@ -31,7 +31,7 @@ Povolené filtry:
 # EN
 A script for analyzing the record of the system for trading on the stock exchange. 
 The script will filter records and provide statistics according to user input.
-## Usage:     tradelog [FILTER] [COMMAND] [LOG [LOG2 [...]]"
+## Usage:     tradelog [FILTER] [COMMAND] [LOG [LOG2 [...]]
 Allowed commands:
 ```
 list-tick          Listing the list of stock symbols, the so-called “tickers"
