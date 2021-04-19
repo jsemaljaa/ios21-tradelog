@@ -9,7 +9,7 @@ Skript pro analýzu záznamu systému pro obchodování na burze cenných papír
 Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele.
 ## Použití:     tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]"
 
-Allowed commands:
+Povolené příkazy:
 ```
 list-tick          Výpis seznamu vyskytujících se burzovních symbolů, tzv. 'tickerů.
 profit             Výpis celkového zisku z uzavřených pozic.
@@ -19,7 +19,7 @@ hist-ord           Výpis histogramu počtu transakcí dle tickeru.
 graph-pos          Výpis grafu hodnot držených pozic dle tickeru.
 ```
 
-Allowed filters:
+Povolené filtry:
 ```
 -a DATETIME        Jsou uvažovány pouze záznamy PO tomto datu (bez tohoto data).
 -b DATETIME        Jsou uvažovány pouze záznamy PŘED tímto datem (bez tohoto data).
@@ -32,7 +32,7 @@ Allowed filters:
 A script for analyzing the record of the system for trading on the stock exchange. 
 The script will filter records and provide statistics according to user input.
 ## Usage:     tradelog [FILTER] [COMMAND] [LOG [LOG2 [...]]"
-Available commands
+Allowed commands:
 ```
 list-tick          Listing the list of stock symbols, the so-called “tickers"
 profit             An extract of the total profit from closed positions.
@@ -41,7 +41,7 @@ last-price         Listing the last known price for each ticker.
 hist-ord           Extract the histogram of the number of transactions according to the ticker.
 graph–pos          Print the chart of the values of the held positions according to the ticker.
 ```
-Available filters
+Allowed filters:
 ```
 -a DATETIME        Only records after this date (without this date) are considered.
 -b DATETIME        Only records before this date (without this date) are considered.
