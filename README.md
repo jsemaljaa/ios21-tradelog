@@ -2,6 +2,7 @@
 # tradelog 
 
 ## School project (Operating systems, BASH)
+Hodnocení
 
 
 # CZ
@@ -9,15 +10,14 @@ Skript pro analýzu záznamu systému pro obchodování na burze cenných papír
 Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele.
 ## Použití:     tradelog [FILTR] [PŘÍKAZ] [LOG [LOG2 [...]]
 
-Povolené příkazy:
-```
-list-tick          Výpis seznamu vyskytujících se burzovních symbolů, tzv. 'tickerů.
-profit             Výpis celkového zisku z uzavřených pozic.
-pos                Výpis hodnot aktuálně držených pozic seřazených sestupně dle hodnoty.
-last-price         výpis poslední známé ceny pro každý ticker.
-hist-ord           Výpis histogramu počtu transakcí dle tickeru.
-graph-pos          Výpis grafu hodnot držených pozic dle tickeru.
-```
+| Příkaz | Popis |
+| --- | --- |
+| `list-tick`  | Výpis seznamu vyskytujících se burzovních symbolů, tzv. 'tickerů. |
+| `profit`     | Výpis celkového zisku z uzavřených pozic. |
+| `pos`        | Výpis hodnot aktuálně držených pozic seřazených sestupně dle hodnoty. |
+| `last-price` | Výpis poslední známé ceny pro každý ticker. |
+| `hist-ord`   | Výpis histogramu počtu transakcí dle tickeru. |
+| `graph-pos`  | Výpis grafu hodnot držených pozic dle tickeru. |
 
 Povolené filtry:
 ```
