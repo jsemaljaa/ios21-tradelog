@@ -25,6 +25,7 @@ Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele.
 | `-b DATETIME` | Jsou uvažovány pouze záznamy PŘED tímto datem (bez tohoto data). |
 | `-t TICKER`   | Jsou uvažovány pouze záznamy odpovídající danému tickeru. |
 | `-w WIDTH`    | U výpisu grafů nastavuje jejich šířku, tedy délku nejdelšího řádku na WIDTH. |
+
 *DATETIME je formátu YYYY-MM-DD HH:MM:SS
 
 # EN
@@ -46,4 +47,5 @@ The script will filter records and provide statistics according to user input.
 | `-b DATETIME` | Only records before this date (without this date) are considered. |
 | `-t TICKER`   | Only entries corresponding to a given ticker are considered. |
 | `-w WIDTH`    | For listing graphs, it sets their width, that is, the length of the longest line to width. |
+
 *DATETIME is in format of YYYY-MM-DD HH:MM:SS
