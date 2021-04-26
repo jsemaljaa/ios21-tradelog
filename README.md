@@ -24,7 +24,7 @@ Může filtrovat záznamy a poskytovat statistiky podle vstupu uživatele.
 | `-a DATETIME` | Jsou uvažovány pouze záznamy PO tomto datu (bez tohoto data).* |
 | `-b DATETIME` | Jsou uvažovány pouze záznamy PŘED tímto datem (bez tohoto data). |
 | `-t TICKER`   | Jsou uvažovány pouze záznamy odpovídající danému tickeru. |
-| `-w WIDTH`    | U výpisu grafů nastavuje jejich šířku, tedy délku nejdelšího řádku na WIDTH.
+| `-w WIDTH`    | U výpisu grafů nastavuje jejich šířku, tedy délku nejdelšího řádku na WIDTH. |
 *DATETIME je formátu YYYY-MM-DD HH:MM:SS
 
 # EN
